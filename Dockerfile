@@ -6,14 +6,13 @@ WORKDIR /app
 ENV UV_PYTHON_INSTALL_DIR=/app/python
 COPY pyproject.toml uv.lock README.md ./
 COPY src ./src
+RUN uv sync --no-dev --frozen --no-editable
 RUN printf 'from tinkershop.server import main; main()\n' > __main__.py \
- && uv sync --no-dev --frozen --no-editable \
  && uv pip install pyinstaller \
- && .venv/bin/pyinstaller --onedir --strip --name tinkershop --collect-all tinkershop __main__.py
+ && .venv/bin/pyinstaller --onedir --strip --name tinkershop __main__.py
 
-FROM scratch
+FROM alpine:latest
+RUN addgroup -S appgroup && adduser -S appuser -G appgroup
 COPY --from=builder /app/dist/tinkershop /app/tinkershop
-COPY --from=builder /lib/ld-musl-x86_64.so.1 /lib/
-COPY --from=builder /usr/lib/libz.so.1 /lib/
-USER 65532:65532
+USER appuser
 ENTRYPOINT ["/app/tinkershop/tinkershop"]
