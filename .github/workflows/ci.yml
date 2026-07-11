@@ -64,7 +64,7 @@ jobs:
 
       - run: uv sync --frozen --extra dev
 
-      - run: uv run python -m build --wheel --sdist --outdir dist
+      - run: uv build --out-dir dist
 
       - uses: actions/upload-artifact@v7
         with:
