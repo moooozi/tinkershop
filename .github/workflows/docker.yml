@@ -112,17 +112,12 @@ jobs:
       - name: Create and push multi-arch manifest
         env:
           TAGS: ${{ steps.meta.outputs.tags }}
-          IMAGES: |
-            ghcr.io/${{ env.IMAGE_NAME }}
-            ${{ env.DOCKERHUB_IMAGE_NAME }}
         run: |
           set -euo pipefail
-          for IMG in $IMAGES; do
-            for TAG in $TAGS; do
-              echo "Pushing $IMG:$TAG"
-              docker buildx imagetools create \
-                --tag "$IMG:$TAG" \
-                "tinkershop:local-amd64" \
-                "tinkershop:local-arm64"
-            done
+          for TAG in $TAGS; do
+            echo "Pushing $TAG"
+            docker buildx imagetools create \
+              --tag "$TAG" \
+              "tinkershop:local-amd64" \
+              "tinkershop:local-arm64"
           done
