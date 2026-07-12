@@ -116,8 +116,7 @@ jobs:
           set -euo pipefail
           for TAG in $TAGS; do
             echo "Pushing $TAG"
-            docker buildx imagetools create \
-              --tag "$TAG" \
-              "tinkershop:local-amd64" \
-              "tinkershop:local-arm64"
+            docker manifest create "$TAG" \
+              tinkershop:local-amd64 tinkershop:local-arm64
+            docker manifest push --purge "$TAG"
           done
