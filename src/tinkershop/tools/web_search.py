@@ -6,6 +6,7 @@ Inspired by https://github.com/nickclyde/duckduckgo-mcp-server.
 from __future__ import annotations
 
 import asyncio
+import json
 import os
 import sys
 import traceback
@@ -49,7 +50,7 @@ class SearchResult:
     title: str
     link: str
     snippet: str
-    position: int
+    rank: int
 
 
 class RateLimiter:
@@ -129,11 +130,28 @@ class DuckDuckGoSearcher:
 
         output = [f"Found {len(results)} search results:\n"]
         for result in results:
-            output.append(f"{result.position}. {result.title}")
+            output.append(f"{result.rank}. {result.title}")
             output.append(f"   URL: {result.link}")
             output.append(f"   Summary: {result.snippet}")
             output.append("")
         return "\n".join(output)
+
+    def format_results_as_json(self, results: list[SearchResult]) -> str:
+        """Format results as a JSON array string."""
+        if not results:
+            return "[]"
+        return json.dumps(
+            [
+                {
+                    "title": result.title,
+                    "link": result.link,
+                    "snippet": result.snippet,
+                    "rank": result.rank,
+                }
+                for result in results
+            ],
+            indent=2,
+        )
 
     async def search(
         self,
@@ -192,7 +210,7 @@ class DuckDuckGoSearcher:
                         title=title,
                         link=link,
                         snippet=snippet,
-                        position=len(results) + 1,
+                        rank=len(results) + 1,
                     )
                 )
                 if len(results) >= max_results:
@@ -312,6 +330,7 @@ def register(mcp: FastMCP) -> DuckDuckGoSearcher:
         ctx: Context,
         max_results: int = 10,
         region: str = "",
+        output_format: str = "markdown",
     ) -> str:
         """Search the web using DuckDuckGo.
 
@@ -329,9 +348,15 @@ def register(mcp: FastMCP) -> DuckDuckGoSearcher:
             max_results: Maximum number of results to return (1-20, default 10).
             region: Optional region/language code to localise results, e.g.
                 ``us-en``, ``wt-wt``. Leave empty to use the server default.
+            output_format: Output format for results. Use ``"markdown"`` (default) for
+                human-readable text, or ``"json"`` for a structured JSON array.
         """
         try:
             results = await searcher.search(query, ctx, max_results, region)
+            if output_format.lower() == "json":
+                return searcher.format_results_as_json(results)
+            if output_format.lower() != "markdown":
+                return f"Unsupported format '{output_format}'. Supported formats: markdown, json"
             return searcher.format_results_for_llm(results)
         except Exception as exc:
             traceback.print_exc(file=sys.stderr)

@@ -37,7 +37,7 @@ def _results() -> list[SearchResult]:
             title="Example",
             link="https://example.com",
             snippet="hi",
-            position=1,
+            rank=1,
         ),
     ]
 
