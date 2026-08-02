@@ -13,7 +13,7 @@ from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 
 import uvicorn
-from mcp.server.fastmcp import FastMCP
+from mcp.server.mcpserver import MCPServer
 from starlette.applications import Starlette
 from starlette.middleware.cors import CORSMiddleware
 from starlette.routing import BaseRoute, Route
@@ -24,25 +24,22 @@ from tinkershop.tools.web_search import register
 SERVER_NAME = "tinkershop"
 
 
-def create_server() -> FastMCP:
-    """Build a FastMCP instance and register all tools on it."""
-    mcp = FastMCP(SERVER_NAME)
+def create_server() -> MCPServer:
+    """Build a MCPServer instance and register all tools on it."""
+    mcp = MCPServer(SERVER_NAME)
     register(mcp)
     return mcp
 
 
 def _build_http_app(
-    mcp: FastMCP,
+    mcp: MCPServer,
     transports: set[str],
     host: str,
     port: int,
 ) -> Starlette:
     """Combine SSE and/or Streamable HTTP apps onto a single Starlette app."""
-    sse_app = mcp.sse_app() if "sse" in transports else None
-    http_app = mcp.streamable_http_app() if "streamable-http" in transports else None
-
-    mcp.settings.host = host
-    mcp.settings.port = port
+    sse_app = mcp.sse_app(host=host) if "sse" in transports else None
+    http_app = mcp.streamable_http_app(host=host) if "streamable-http" in transports else None
 
     combined_routes: list[BaseRoute] = []
     added_routes: set[tuple[str, tuple[str, ...]]] = set()

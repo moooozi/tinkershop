@@ -1,4 +1,4 @@
-"""Smoke tests for the tinkershop FastMCP server."""
+"""Smoke tests for the tinkershop MCPServer."""
 
 from __future__ import annotations
 
@@ -25,6 +25,6 @@ async def test_web_search_tool_description_is_meaningful() -> None:
     assert tool.description
     assert "DuckDuckGo" in tool.description
     # inputSchema should declare the expected query parameter.
-    schema_props = tool.inputSchema.get("properties", {})
+    schema_props = tool.input_schema.get("properties", {})
     assert "query" in schema_props
-    assert re.search(r"\\bmax_results\\b", str(tool.inputSchema)) or "max_results" in schema_props
+    assert re.search(r"\\bmax_results\\b", str(tool.input_schema)) or "max_results" in schema_props

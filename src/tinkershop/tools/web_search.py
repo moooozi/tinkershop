@@ -18,7 +18,7 @@ from typing import ClassVar
 
 import httpx
 from bs4 import BeautifulSoup
-from mcp.server.fastmcp import Context, FastMCP
+from mcp.server.mcpserver import Context, MCPServer
 
 SUPPORTED_BACKENDS = ("httpx", "curl", "auto")
 
@@ -320,7 +320,7 @@ def _build_searcher() -> DuckDuckGoSearcher:
     )
 
 
-def register(mcp: FastMCP) -> DuckDuckGoSearcher:
+def register(mcp: MCPServer) -> DuckDuckGoSearcher:
     """Register the ``web_search`` tool on ``mcp`` and return the underlying searcher."""
     searcher = _build_searcher()
 
