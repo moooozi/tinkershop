@@ -1,12 +1,12 @@
 [project]
 name = "tinkershop"
-version = "0.1.0"
+version = "0.1.1"
 description = "Local MCP toolkit providing additional tools for AI agents."
 readme = "README.md"
 requires-python = ">=3.12"
 license = { text = "MIT" }
 authors = [
-    { name = "Mosi" },
+    { name = "moooozi" },
 ]
 dependencies = [
     "mcp[cli]>=1.12",
