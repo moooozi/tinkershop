@@ -1,3 +1,3 @@
 """tinkershop — a local MCP toolkit providing additional tools."""
 
-__version__ = "0.1.4"
+__version__ = "0.1.5"
