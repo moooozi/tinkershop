@@ -60,9 +60,7 @@ def test_format_results_handles_empty() -> None:
 def test_format_results_mentions_browser_extra_when_blocked(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    monkeypatch.setattr(
-        "tinkershop.tools.web_search._curl_cffi_available", lambda: False
-    )
+    monkeypatch.setattr("tinkershop.tools.web_search._curl_cffi_available", lambda: False)
     searcher = DuckDuckGoSearcher()
     text = searcher.format_results_for_llm([])
     assert "browser backend" in text
@@ -72,9 +70,7 @@ def test_format_results_mentions_browser_extra_when_blocked(
 def test_format_results_omits_browser_extra_when_available(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    monkeypatch.setattr(
-        "tinkershop.tools.web_search._curl_cffi_available", lambda: True
-    )
+    monkeypatch.setattr("tinkershop.tools.web_search._curl_cffi_available", lambda: True)
     searcher = DuckDuckGoSearcher()
     text = searcher.format_results_for_llm([])
     assert "browser backend" not in text
@@ -150,9 +146,7 @@ def test_is_search_block_passes_real_results() -> None:
 def test_build_searcher_defaults_to_curl_when_available(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    monkeypatch.setattr(
-        "tinkershop.tools.web_search._curl_cffi_available", lambda: True
-    )
+    monkeypatch.setattr("tinkershop.tools.web_search._curl_cffi_available", lambda: True)
     monkeypatch.setenv("DDG_SAFE_SEARCH", "MODERATE")
     monkeypatch.setenv("DDG_REGION", "")
     if "DDG_SEARCH_BACKEND" in os.environ:
@@ -164,9 +158,7 @@ def test_build_searcher_defaults_to_curl_when_available(
 def test_build_searcher_defaults_to_httpx_when_curl_unavailable(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    monkeypatch.setattr(
-        "tinkershop.tools.web_search._curl_cffi_available", lambda: False
-    )
+    monkeypatch.setattr("tinkershop.tools.web_search._curl_cffi_available", lambda: False)
     monkeypatch.setenv("DDG_SAFE_SEARCH", "MODERATE")
     monkeypatch.setenv("DDG_REGION", "")
     if "DDG_SEARCH_BACKEND" in os.environ:
@@ -186,9 +178,7 @@ def test_build_searcher_uses_env_backend_when_set(monkeypatch: pytest.MonkeyPatc
 def test_build_searcher_falls_back_to_best_on_invalid_backend(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    monkeypatch.setattr(
-        "tinkershop.tools.web_search._curl_cffi_available", lambda: True
-    )
+    monkeypatch.setattr("tinkershop.tools.web_search._curl_cffi_available", lambda: True)
     monkeypatch.setenv("DDG_SEARCH_BACKEND", "invalid")
     monkeypatch.setenv("DDG_SAFE_SEARCH", "MODERATE")
     monkeypatch.setenv("DDG_REGION", "")
