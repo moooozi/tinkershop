@@ -16,6 +16,7 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
+browser = ["curl-cffi>=0.6"]
 dev = [
     "pytest>=8.0",
     "pytest-asyncio>=0.24",

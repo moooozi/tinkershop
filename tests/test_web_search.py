@@ -2,13 +2,18 @@
 
 from __future__ import annotations
 
+import os
+
 import pytest
 
 from tinkershop.tools.web_search import (
+    SUPPORTED_BACKENDS,
     DuckDuckGoSearcher,
     RateLimiter,
     SafeSearchMode,
     SearchResult,
+    _build_searcher,
+    _is_search_block,
 )
 
 
@@ -50,13 +55,43 @@ def test_format_results_handles_empty() -> None:
     searcher = DuckDuckGoSearcher()
     text = searcher.format_results_for_llm([])
     assert "No results" in text
-    # Should not leak references to optional backends we don't ship.
+
+
+def test_format_results_mentions_browser_extra_when_blocked(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(
+        "tinkershop.tools.web_search._curl_cffi_available", lambda: False
+    )
+    searcher = DuckDuckGoSearcher()
+    text = searcher.format_results_for_llm([])
+    assert "browser backend" in text
+    assert "tinkershop[browser]" in text
+
+
+def test_format_results_omits_browser_extra_when_available(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(
+        "tinkershop.tools.web_search._curl_cffi_available", lambda: True
+    )
+    searcher = DuckDuckGoSearcher()
+    text = searcher.format_results_for_llm([])
     assert "browser backend" not in text
 
 
 def test_safe_search_modes_are_distinct() -> None:
     values = {m.value for m in SafeSearchMode}
     assert len(values) == 3
+
+
+def test_supported_backends() -> None:
+    assert SUPPORTED_BACKENDS == ("httpx", "curl", "auto")
+
+
+def test_invalid_backend_raises() -> None:
+    with pytest.raises(ValueError, match="Unknown backend"):
+        DuckDuckGoSearcher(backend="invalid")
 
 
 @pytest.mark.asyncio
@@ -94,3 +129,68 @@ async def test_search_returns_empty_on_http_error(monkeypatch: pytest.MonkeyPatc
     results = await searcher.search("anything", ctx, max_results=5)
     assert results == []
     assert ctx.error_calls, "expected an error to be logged via ctx.error"
+
+
+def test_is_search_block_detects_202() -> None:
+    assert _is_search_block(202, "<html></html>")
+
+
+def test_is_search_block_detects_403() -> None:
+    assert _is_search_block(403, "<html></html>")
+
+
+def test_is_search_block_detects_empty_200() -> None:
+    assert _is_search_block(200, "   ")
+
+
+def test_is_search_block_passes_real_results() -> None:
+    assert not _is_search_block(200, "<div class='result'>ok</div>")
+
+
+def test_build_searcher_defaults_to_curl_when_available(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(
+        "tinkershop.tools.web_search._curl_cffi_available", lambda: True
+    )
+    monkeypatch.setenv("DDG_SAFE_SEARCH", "MODERATE")
+    monkeypatch.setenv("DDG_REGION", "")
+    if "DDG_SEARCH_BACKEND" in os.environ:
+        monkeypatch.delenv("DDG_SEARCH_BACKEND")
+    searcher = _build_searcher()
+    assert searcher.backend == "curl"
+
+
+def test_build_searcher_defaults_to_httpx_when_curl_unavailable(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(
+        "tinkershop.tools.web_search._curl_cffi_available", lambda: False
+    )
+    monkeypatch.setenv("DDG_SAFE_SEARCH", "MODERATE")
+    monkeypatch.setenv("DDG_REGION", "")
+    if "DDG_SEARCH_BACKEND" in os.environ:
+        monkeypatch.delenv("DDG_SEARCH_BACKEND")
+    searcher = _build_searcher()
+    assert searcher.backend == "httpx"
+
+
+def test_build_searcher_uses_env_backend_when_set(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("DDG_SEARCH_BACKEND", "httpx")
+    monkeypatch.setenv("DDG_SAFE_SEARCH", "MODERATE")
+    monkeypatch.setenv("DDG_REGION", "")
+    searcher = _build_searcher()
+    assert searcher.backend == "httpx"
+
+
+def test_build_searcher_falls_back_to_best_on_invalid_backend(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(
+        "tinkershop.tools.web_search._curl_cffi_available", lambda: True
+    )
+    monkeypatch.setenv("DDG_SEARCH_BACKEND", "invalid")
+    monkeypatch.setenv("DDG_SAFE_SEARCH", "MODERATE")
+    monkeypatch.setenv("DDG_REGION", "")
+    searcher = _build_searcher()
+    assert searcher.backend == "curl"
